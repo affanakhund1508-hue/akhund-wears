@@ -70,8 +70,7 @@ function Checkout({ cart, onPlaceOrder, orderPlaced }) {
     };
 
     try {
-      const response = await fetch("http://localhost:5000/api/orders", {
-        method: "POST",
+   const response = await fetch(`${import.meta.env.VITE_API_URL}/orders`, {        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
