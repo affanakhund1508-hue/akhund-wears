@@ -87,6 +87,18 @@ button {
   opacity: 0.65;
 }
 
+.nav-logout {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  transition: 0.3s ease;
+}
+
+.nav-logout:hover {
+  opacity: 0.65;
+}
+
 .cart-link {
   display: flex;
   align-items: center;
@@ -583,6 +595,12 @@ button {
 .detail-description {
   line-height: 1.8;
   margin-bottom: 30px;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .back-link {

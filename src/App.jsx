@@ -35,6 +35,9 @@ function App() {
         .replace(/,/g, "")
     );
 
+    // A new purchase has started, so clear the previous "Order Confirmed" state
+    setOrderPlaced(false);
+
     setCart((currentCart) => {
       const existing = currentCart.find(
         (item) => item.id === product.id
