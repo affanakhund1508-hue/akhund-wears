@@ -1,9 +1,10 @@
 
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 function ProductDetails({ onAddToCart }) {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -76,12 +77,24 @@ fetch(`${import.meta.env.VITE_API_URL}/products/${id}`)      .then((res) => {
           {product.description}
         </p>
 
-        <button
-          className="primary-btn"
-          onClick={() => onAddToCart(product)}
-        >
-          Add to Cart
-        </button>
+        <div className="detail-actions">
+          <button
+            className="primary-btn"
+            onClick={() => {
+              onAddToCart(product);
+              navigate("/checkout");
+            }}
+          >
+            Buy Now
+          </button>
+
+          <button
+            className="secondary-btn"
+            onClick={() => onAddToCart(product)}
+          >
+            Add to Cart
+          </button>
+        </div>
 
         <Link to="/shop" className="back-link">
           ← Continue Shopping

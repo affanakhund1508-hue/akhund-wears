@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -41,6 +41,11 @@ function AdminLogin() {
       setError("Could not connect to server");
     }
   };
+
+  // Already signed in, so go straight to the orders page
+  if (sessionStorage.getItem("adminToken")) {
+    return <Navigate to="/admin/orders" replace />;
+  }
 
   return (
     <main className="page simple-page">
