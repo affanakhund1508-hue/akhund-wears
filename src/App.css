@@ -1188,3 +1188,76 @@ button {
     font-size: 30px;
   }
 }
+
+/* Product card: Buy Now + Add to Cart */
+
+.product-bottom {
+  flex-wrap: wrap;
+}
+
+.product-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.product-bottom .buy-now-btn {
+  background: #17130f;
+  color: white;
+}
+
+.product-bottom .buy-now-btn:hover {
+  opacity: 0.85;
+}
+/* =========================
+   MOBILE: 2 products per row
+========================= */
+
+@media (max-width: 600px) {
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .product-info {
+    padding: 10px;
+  }
+
+  .product-category {
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .product-title h3 {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .product-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .product-price {
+    font-size: 14px;
+  }
+
+  .product-actions {
+    gap: 6px;
+  }
+
+  .product-bottom button {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+}
+
+/* Very small phones: stack the buttons so they never get squeezed */
+@media (max-width: 340px) {
+  .product-actions {
+    flex-direction: column;
+  }
+}

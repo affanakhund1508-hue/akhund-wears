@@ -1,6 +1,13 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function ProductCard({ product, onAddToCart }) {
+  const navigate = useNavigate();
+
+  const handleBuyNow = () => {
+    onAddToCart(product);
+    navigate("/checkout");
+  };
+
   return (
     <div className="product-card">
       <Link to={`/product/${product.id}`} className="product-image-link">
@@ -17,9 +24,15 @@ function ProductCard({ product, onAddToCart }) {
         <div className="product-bottom">
           <p className="product-price">{product.price}</p>
 
-          <button onClick={() => onAddToCart(product)}>
-            Add to Cart
-          </button>
+          <div className="product-actions">
+            <button className="buy-now-btn" onClick={handleBuyNow}>
+              Buy Now
+            </button>
+
+            <button onClick={() => onAddToCart(product)}>
+              Add to Cart
+            </button>
+          </div>
         </div>
       </div>
     </div>
