@@ -1,6 +1,8 @@
 
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import ImageSlider from "../components/ImageSlider";
+import { getGallery } from "../utils/images";
 
 function ProductDetails({ onAddToCart }) {
   const { id } = useParams();
@@ -56,8 +58,9 @@ fetch(`${import.meta.env.VITE_API_URL}/products/${id}`)      .then((res) => {
   return (
     <main className="product-detail">
       <div className="product-detail-image">
-        <img
-          src={product.image}
+        <ImageSlider
+          key={product.id}
+          images={getGallery(product)}
           alt={product.name}
         />
       </div>

@@ -1,4 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
+import ImageSlider from "./ImageSlider";
+import { getGallery } from "../utils/images";
 
 function ProductCard({ product, onAddToCart }) {
   const navigate = useNavigate();
@@ -10,9 +12,12 @@ function ProductCard({ product, onAddToCart }) {
 
   return (
     <div className="product-card">
-      <Link to={`/product/${product.id}`} className="product-image-link">
-        <img src={product.image} alt={product.name} />
-      </Link>
+      <ImageSlider
+        images={getGallery(product)}
+        alt={product.name}
+        to={`/product/${product.id}`}
+        imageClass="product-image-link"
+      />
 
       <div className="product-info">
         <p className="product-category">{product.category}</p>

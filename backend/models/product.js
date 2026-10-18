@@ -22,9 +22,16 @@ const productSchema = new mongoose.Schema(
       default: "",
     },
 
+    // First picture (kept so older products keep working)
     image: {
       type: String,
       default: "",
+    },
+
+    // All pictures of the product, in the order they are shown
+    images: {
+      type: [String],
+      default: [],
     },
 
     stock: {

@@ -24,6 +24,12 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: "Cash on Delivery",
     },
+
+    status: {
+      type: String,
+      enum: ["Pending", "Delivered", "Cancelled"],
+      default: "Pending",
+    },
   },
   {
     timestamps: true,

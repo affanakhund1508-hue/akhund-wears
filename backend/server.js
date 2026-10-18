@@ -12,6 +12,8 @@ const connectDB = require("./config/db");
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const authRoutes = require("./routes/authRoutes");
+const imageRoutes = require("./routes/imageRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
 
 const app = express();
 
@@ -21,7 +23,8 @@ app.use(
   })
 );
 
-app.use(express.json());
+// Larger limit so admin picture uploads fit
+app.use(express.json({ limit: "5mb" }));
 
 app.get("/", (req, res) => {
   res.json({
@@ -32,6 +35,8 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/images", imageRoutes);
+app.use("/api/settings", settingsRoutes);
 
 // Connect to MongoDB
 connectDB().catch((error) => {

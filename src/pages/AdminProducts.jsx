@@ -1,17 +1,31 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  getGallery,
+  getRawImages,
+  resolveImage,
+  uploadImage,
+} from "../utils/images";
+
+const emptyForm = {
+  name: "",
+  category: "",
+  price: "",
+  description: "",
+  images: [],
+  stock: "",
+};
 
 function AdminProducts() {
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(emptyForm);
+  const [uploading, setUploading] = useState(false);
 
-  const [form, setForm] = useState({
-    name: "",
-    category: "",
-    price: "",
-    description: "",
-    image: "",
-    stock: "",
-  });
+  const [heroImage, setHeroImage] = useState("");
+  const [heroUploading, setHeroUploading] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -19,11 +33,26 @@ function AdminProducts() {
     return sessionStorage.getItem("adminToken");
   };
 
+  // Existing categories, used as suggestions in the form
+  const categories = [
+    ...new Set(
+      products.map((product) => product.category).filter(Boolean)
+    ),
+  ];
+
+  // Login expired or invalid: clear it and go back to the login page
+  const handleSessionExpired = () => {
+    sessionStorage.removeItem("adminToken");
+    alert("Your admin session expired. Please log in again.");
+    navigate("/admin/login", { replace: true });
+  };
+
+  const isAuthError = (response) =>
+    response.status === 401 || response.status === 403;
+
   const fetchProducts = async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/products`
-      );
+      const response = await fetch(`${API_URL}/products`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch products");
@@ -32,15 +61,28 @@ function AdminProducts() {
       const data = await response.json();
       setProducts(data);
     } catch (error) {
-      console.error(
-        "Error fetching products:",
-        error
-      );
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch(`${API_URL}/settings`);
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+      setHeroImage(data.heroImage || "");
+    } catch (error) {
+      console.error("Error fetching settings:", error);
     }
   };
 
   useEffect(() => {
     fetchProducts();
+    fetchSettings();
   }, []);
 
   const handleChange = (e) => {
@@ -51,17 +93,136 @@ function AdminProducts() {
   };
 
   const resetForm = () => {
-    setForm({
-      name: "",
-      category: "",
-      price: "",
-      description: "",
-      image: "",
-      stock: "",
-    });
-
+    setForm(emptyForm);
     setEditingId(null);
   };
+
+  // ----- Product pictures -----
+
+  const handleFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+
+    // Clear the input so the same file can be chosen again later
+    e.target.value = "";
+
+    if (files.length === 0) return;
+
+    const token = getToken();
+
+    if (!token) {
+      handleSessionExpired();
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      for (const file of files) {
+        const url = await uploadImage(file, token);
+
+        setForm((current) => ({
+          ...current,
+          images: [...current.images, url],
+        }));
+      }
+    } catch (error) {
+      if (error.status === 401 || error.status === 403) {
+        handleSessionExpired();
+      } else {
+        alert(error.message || "Could not upload the picture.");
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = (index) => {
+    setForm((current) => ({
+      ...current,
+      images: current.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  const makeMainImage = (index) => {
+    setForm((current) => ({
+      ...current,
+      images: [
+        current.images[index],
+        ...current.images.filter((_, i) => i !== index),
+      ],
+    }));
+  };
+
+  // ----- Home page picture -----
+
+  const saveHeroImage = async (imagePath) => {
+    const token = getToken();
+
+    if (!token) {
+      handleSessionExpired();
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ heroImage: imagePath }),
+      });
+
+      if (isAuthError(response)) {
+        handleSessionExpired();
+        return;
+      }
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        alert(data.message || "Could not save the home page picture.");
+        return;
+      }
+
+      setHeroImage(data.heroImage || "");
+    } catch (error) {
+      console.error("Hero save error:", error);
+      alert("Could not connect to the server.");
+    }
+  };
+
+  const handleHeroFile = async (e) => {
+    const file = e.target.files && e.target.files[0];
+
+    e.target.value = "";
+
+    if (!file) return;
+
+    const token = getToken();
+
+    if (!token) {
+      handleSessionExpired();
+      return;
+    }
+
+    setHeroUploading(true);
+
+    try {
+      const url = await uploadImage(file, token);
+      await saveHeroImage(url);
+    } catch (error) {
+      if (error.status === 401 || error.status === 403) {
+        handleSessionExpired();
+      } else {
+        alert(error.message || "Could not upload the picture.");
+      }
+    } finally {
+      setHeroUploading(false);
+    }
+  };
+
+  // ----- Products -----
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,14 +230,17 @@ function AdminProducts() {
     const token = getToken();
 
     if (!token) {
-      alert("Admin login required.");
+      handleSessionExpired();
       return;
     }
 
     const productData = {
       ...form,
+      category: form.category.trim(),
       price: Number(form.price),
       stock: Number(form.stock),
+      // "image" keeps the first picture, so older code still works
+      image: form.images[0] || "",
     };
 
     const url = editingId
@@ -95,27 +259,24 @@ function AdminProducts() {
         body: JSON.stringify(productData),
       });
 
-      const data = await response.json();
+      if (isAuthError(response)) {
+        handleSessionExpired();
+        return;
+      }
+
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        alert(
-          data.message ||
-            "Something went wrong."
-        );
+        alert(data.message || "Something went wrong.");
         return;
       }
 
       resetForm();
       fetchProducts();
     } catch (error) {
-      console.error(
-        "Product save error:",
-        error
-      );
+      console.error("Product save error:", error);
 
-      alert(
-        "Could not connect to the server."
-      );
+      alert("Could not connect to the server.");
     }
   };
 
@@ -127,7 +288,7 @@ function AdminProducts() {
       category: product.category,
       price: product.price,
       description: product.description,
-      image: product.image,
+      images: getRawImages(product),
       stock: product.stock,
     });
 
@@ -147,66 +308,81 @@ function AdminProducts() {
     const token = getToken();
 
     if (!token) {
-      alert("Admin login required.");
+      handleSessionExpired();
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_URL}/products/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      const data = await response.json();
+      if (isAuthError(response)) {
+        handleSessionExpired();
+        return;
+      }
+
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        alert(
-          data.message ||
-            "Could not delete product."
-        );
+        alert(data.message || "Could not delete product.");
         return;
       }
 
       fetchProducts();
     } catch (error) {
-      console.error(
-        "Delete error:",
-        error
-      );
+      console.error("Delete error:", error);
 
-      alert(
-        "Could not connect to the server."
-      );
+      alert("Could not connect to the server.");
     }
   };
 
   return (
     <main className="page">
       <div className="page-heading">
-        <p className="section-small">
-          AKHUND WEARS
-        </p>
+        <p className="section-small">AKHUND WEARS</p>
 
         <h1>Product Management</h1>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          maxWidth: "600px",
-          marginBottom: "40px",
-        }}
-      >
-        <h2>
-          {editingId
-            ? "Edit Product"
-            : "Add Product"}
-        </h2>
+      <section className="admin-card admin-hero">
+        <h2>Home Page Picture</h2>
+
+        <img
+          src={resolveImage(heroImage) || "/images/hero.png"}
+          alt="Current home page picture"
+          className="admin-hero-preview"
+        />
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleHeroFile}
+          disabled={heroUploading}
+        />
+
+        <p className="admin-hint">
+          {heroUploading
+            ? "Uploading..."
+            : "Choose a new wide picture for the top of the home page."}
+        </p>
+
+        {heroImage && (
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => saveHeroImage("")}
+          >
+            Use the original picture
+          </button>
+        )}
+      </section>
+
+      <form onSubmit={handleSubmit} className="admin-form">
+        <h2>{editingId ? "Edit Product" : "Add Product"}</h2>
 
         <input
           name="name"
@@ -218,11 +394,23 @@ function AdminProducts() {
 
         <input
           name="category"
+          list="category-options"
           value={form.category}
           onChange={handleChange}
           placeholder="Category"
           required
         />
+
+        <datalist id="category-options">
+          {categories.map((item) => (
+            <option key={item} value={item} />
+          ))}
+        </datalist>
+
+        <p className="admin-hint">
+          Pick an existing category, or type a new one to create it.
+          It appears in the Shop filter automatically.
+        </p>
 
         <input
           name="price"
@@ -241,12 +429,53 @@ function AdminProducts() {
           rows="4"
         />
 
+        <p className="admin-label">Pictures</p>
+
         <input
-          name="image"
-          value={form.image}
-          onChange={handleChange}
-          placeholder="/images/product.png"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFiles}
+          disabled={uploading}
         />
+
+        <p className="admin-hint">
+          {uploading
+            ? "Uploading..."
+            : "Choose photos from your gallery, files or camera. The first picture is the main one. With two or more, customers get an arrow to see the next picture."}
+        </p>
+
+        {form.images.length > 0 && (
+          <div className="upload-list">
+            {form.images.map((src, index) => (
+              <div className="upload-item" key={`${src}-${index}`}>
+                <img src={resolveImage(src)} alt={`Picture ${index + 1}`} />
+
+                {index === 0 && (
+                  <span className="upload-badge">Main</span>
+                )}
+
+                <div className="upload-item-actions">
+                  {index > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => makeMainImage(index)}
+                    >
+                      Make main
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <input
           name="stock"
@@ -257,27 +486,25 @@ function AdminProducts() {
           required
         />
 
-        <button
-          className="primary-btn"
-          type="submit"
-        >
-          {editingId
-            ? "Update Product"
-            : "Add Product"}
-        </button>
-
-        {editingId && (
+        <div className="admin-actions">
           <button
-            type="button"
-            className="secondary-btn"
-            onClick={resetForm}
-            style={{
-              marginLeft: "10px",
-            }}
+            className="primary-btn"
+            type="submit"
+            disabled={uploading}
           >
-            Cancel
+            {editingId ? "Update Product" : "Add Product"}
           </button>
-        )}
+
+          {editingId && (
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={resetForm}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
       <div>
@@ -286,52 +513,57 @@ function AdminProducts() {
         {products.length === 0 ? (
           <p>No products found.</p>
         ) : (
-          products.map((product) => (
-            <div
-              key={product._id}
-              style={{
-                border: "1px solid #ddd",
-                padding: "20px",
-                marginBottom: "15px",
-              }}
-            >
-              <h3>{product.name}</h3>
+          <div className="admin-list">
+            {products.map((product) => {
+              const gallery = getGallery(product);
 
-              <p>
-                Category: {product.category}
-              </p>
+              return (
+                <div key={product._id} className="admin-card">
+                  <div className="admin-product-row">
+                    {gallery[0] && (
+                      <img
+                        src={gallery[0]}
+                        alt={product.name}
+                        className="admin-thumb"
+                      />
+                    )}
 
-              <p>
-                Price: Rs.{" "}
-                {product.price.toLocaleString()}
-              </p>
+                    <div>
+                      <h3>{product.name}</h3>
 
-              <p>
-                Stock: {product.stock}
-              </p>
+                      <p>Category: {product.category}</p>
 
-              <button
-                className="primary-btn"
-                onClick={() =>
-                  handleEdit(product)
-                }
-              >
-                Edit
-              </button>
+                      <p>
+                        Price: Rs. {product.price.toLocaleString()}
+                      </p>
 
-              <button
-                className="secondary-btn"
-                onClick={() =>
-                  handleDelete(product._id)
-                }
-                style={{
-                  marginLeft: "10px",
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          ))
+                      <p>Stock: {product.stock}</p>
+
+                      <p>
+                        Pictures: {gallery.length}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="admin-actions">
+                    <button
+                      className="primary-btn"
+                      onClick={() => handleEdit(product)}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      className="secondary-btn"
+                      onClick={() => handleDelete(product._id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </main>

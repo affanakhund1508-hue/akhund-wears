@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getGallery } from "../utils/images";
 
 function Cart({ cart, onRemove, onIncrease, onDecrease }) {
   const total = cart.reduce(
@@ -27,7 +28,7 @@ function Cart({ cart, onRemove, onIncrease, onDecrease }) {
           <div className="cart-items">
             {cart.map((item) => (
               <div className="cart-item" key={item.id}>
-                <img src={item.image} alt={item.name} />
+                <img src={getGallery(item)[0]} alt={item.name} />
 
                 <div className="cart-item-info">
                   <h3>{item.name}</h3>

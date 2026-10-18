@@ -1,13 +1,31 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { resolveImage } from "../utils/images";
+
+const DEFAULT_HERO = "/images/hero.png";
 
 function Hero() {
+  // null means "still checking which picture to show"
+  const [heroSrc, setHeroSrc] = useState(null);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/settings`)
+      .then((res) => res.json())
+      .then((data) =>
+        setHeroSrc(resolveImage(data.heroImage) || DEFAULT_HERO)
+      )
+      .catch(() => setHeroSrc(DEFAULT_HERO));
+  }, []);
+
   return (
     <section className="hero">
-      <img
-        src="/images/hero.png"
-        alt="Akhund Wears traditional collection"
-        className="hero-img"
-      />
+      {heroSrc && (
+        <img
+          src={heroSrc}
+          alt="Akhund Wears traditional collection"
+          className="hero-img"
+        />
+      )}
 
       <div className="hero-overlay"></div>
 
