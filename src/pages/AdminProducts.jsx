@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AdminPictureBox from "../components/AdminPictureBox";
 import {
   getGallery,
   getRawImages,
@@ -23,9 +24,6 @@ function AdminProducts() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
-
-  const [heroImage, setHeroImage] = useState("");
-  const [heroUploading, setHeroUploading] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -65,24 +63,8 @@ function AdminProducts() {
     }
   };
 
-  const fetchSettings = async () => {
-    try {
-      const response = await fetch(`${API_URL}/settings`);
-
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
-      setHeroImage(data.heroImage || "");
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-    }
-  };
-
   useEffect(() => {
     fetchProducts();
-    fetchSettings();
   }, []);
 
   const handleChange = (e) => {
@@ -151,75 +133,6 @@ function AdminProducts() {
         ...current.images.filter((_, i) => i !== index),
       ],
     }));
-  };
-
-  // ----- Home page picture -----
-
-  const saveHeroImage = async (imagePath) => {
-    const token = getToken();
-
-    if (!token) {
-      handleSessionExpired();
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/settings`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ heroImage: imagePath }),
-      });
-
-      if (isAuthError(response)) {
-        handleSessionExpired();
-        return;
-      }
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        alert(data.message || "Could not save the home page picture.");
-        return;
-      }
-
-      setHeroImage(data.heroImage || "");
-    } catch (error) {
-      console.error("Hero save error:", error);
-      alert("Could not connect to the server.");
-    }
-  };
-
-  const handleHeroFile = async (e) => {
-    const file = e.target.files && e.target.files[0];
-
-    e.target.value = "";
-
-    if (!file) return;
-
-    const token = getToken();
-
-    if (!token) {
-      handleSessionExpired();
-      return;
-    }
-
-    setHeroUploading(true);
-
-    try {
-      const url = await uploadImage(file, token);
-      await saveHeroImage(url);
-    } catch (error) {
-      if (error.status === 401 || error.status === 403) {
-        handleSessionExpired();
-      } else {
-        alert(error.message || "Could not upload the picture.");
-      }
-    } finally {
-      setHeroUploading(false);
-    }
   };
 
   // ----- Products -----
@@ -348,38 +261,19 @@ function AdminProducts() {
         <h1>Product Management</h1>
       </div>
 
-      <section className="admin-card admin-hero">
-        <h2>Home Page Picture</h2>
+      <AdminPictureBox
+        title="Home Page Top Pictures"
+        field="heroImages"
+        defaultSrc="/images/hero.png"
+        hint="Choose one or more wide pictures for the top of the home page. With two or more, the website shows them as a slideshow."
+      />
 
-        <img
-          src={resolveImage(heroImage) || "/images/hero.png"}
-          alt="Current home page picture"
-          className="admin-hero-preview"
-        />
-
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleHeroFile}
-          disabled={heroUploading}
-        />
-
-        <p className="admin-hint">
-          {heroUploading
-            ? "Uploading..."
-            : "Choose a new wide picture for the top of the home page."}
-        </p>
-
-        {heroImage && (
-          <button
-            type="button"
-            className="secondary-btn"
-            onClick={() => saveHeroImage("")}
-          >
-            Use the original picture
-          </button>
-        )}
-      </section>
+      <AdminPictureBox
+        title="Home Page Culture Banner Pictures"
+        field="cultureImages"
+        defaultSrc="/images/culture-banner.png"
+        hint="Choose one or more pictures for the Tradition in Every Detail banner. With two or more, the website shows them as a slideshow."
+      />
 
       <form onSubmit={handleSubmit} className="admin-form">
         <h2>{editingId ? "Edit Product" : "Add Product"}</h2>

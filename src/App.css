@@ -1623,3 +1623,164 @@ button {
 .admin-hero .admin-hint {
   margin: 0 0 15px;
 }
+
+
+/* =========================
+   SLIDESHOW (hero + culture banner)
+========================= */
+
+.culture-image {
+  position: relative;
+}
+
+.fade-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.fade-slide.active {
+  opacity: 1;
+}
+
+.fade-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16px;
+  z-index: 3;
+
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.fade-dots button {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+
+  border: 1px solid white;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.fade-dots button.active {
+  background: white;
+}
+
+/* The culture banner has a light background, so its dots are dark */
+.culture-image .fade-dots button {
+  border-color: #17130f;
+  background: rgba(23, 19, 15, 0.2);
+}
+
+.culture-image .fade-dots button.active {
+  background: #17130f;
+}
+
+
+/* =========================
+   NAVBAR ICONS
+========================= */
+
+.nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-icon {
+  display: none;
+}
+
+/* The admin links sit in the menu row on big screens */
+.nav-admin {
+  display: contents;
+}
+
+@media (max-width: 600px) {
+  /* Logo on top, then one row: Home at the far left, Cart at the far right */
+  .nav-container {
+    padding: 12px 14px 10px;
+    gap: 10px 0;
+    justify-content: space-between;
+  }
+
+  .logo {
+    order: 0;
+  }
+
+  .nav-links {
+    display: contents;
+  }
+
+  .nav-links > .nav-item {
+    order: 1;
+  }
+
+  .cart-link {
+    order: 2;
+  }
+
+  .nav-admin {
+    order: 3;
+
+    display: flex;
+    justify-content: space-evenly;
+
+    width: 100%;
+    padding-top: 8px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .nav-item {
+    position: relative;
+
+    min-width: 54px;
+
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.3px;
+
+    opacity: 0.75;
+  }
+
+  .nav-item.active,
+  .cart-link {
+    opacity: 1;
+  }
+
+  .nav-icon {
+    display: block;
+    width: 22px;
+    height: 22px;
+  }
+
+  .nav-label {
+    font-size: 11px;
+  }
+
+  /* The number sits on the corner of the cart icon */
+  .cart-link .cart-count {
+    position: absolute;
+    top: -6px;
+    left: calc(50% + 4px);
+
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+
+    font-size: 10px;
+  }
+}

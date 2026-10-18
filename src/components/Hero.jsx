@@ -1,29 +1,34 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import FadeSlideshow from "./FadeSlideshow";
 import { resolveImage } from "../utils/images";
 
 const DEFAULT_HERO = "/images/hero.png";
 
 function Hero() {
-  // null means "still checking which picture to show"
-  const [heroSrc, setHeroSrc] = useState(null);
+  // null means "still checking which pictures to show"
+  const [pictures, setPictures] = useState(null);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/settings`)
       .then((res) => res.json())
-      .then((data) =>
-        setHeroSrc(resolveImage(data.heroImage) || DEFAULT_HERO)
-      )
-      .catch(() => setHeroSrc(DEFAULT_HERO));
+      .then((data) => {
+        const list = Array.isArray(data.heroImages)
+          ? data.heroImages.map(resolveImage).filter(Boolean)
+          : [];
+
+        setPictures(list.length > 0 ? list : [DEFAULT_HERO]);
+      })
+      .catch(() => setPictures([DEFAULT_HERO]));
   }, []);
 
   return (
     <section className="hero">
-      {heroSrc && (
-        <img
-          src={heroSrc}
+      {pictures && (
+        <FadeSlideshow
+          images={pictures}
           alt="Akhund Wears traditional collection"
-          className="hero-img"
+          imageClass="hero-img"
         />
       )}
 

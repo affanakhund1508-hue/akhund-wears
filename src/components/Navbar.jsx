@@ -1,4 +1,36 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import {
+  AboutIcon,
+  CartIcon,
+  ContactIcon,
+  HomeIcon,
+  LogoutIcon,
+  OrdersIcon,
+  ProductsIcon,
+  ShopIcon,
+} from "./NavIcons";
+
+// One link of the menu: an icon with its name written below it
+// on phones, and just the name on bigger screens.
+function NavItem({ to, end, icon, label }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        isActive ? "nav-item active" : "nav-item"
+      }
+    >
+      {icon}
+      <span className="nav-label">{label}</span>
+    </NavLink>
+  );
+}
 
 function Navbar({ cartCount }) {
   const navigate = useNavigate();
@@ -20,28 +52,42 @@ function Navbar({ cartCount }) {
         </Link>
 
         <div className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/shop">Shop</Link>
-          <Link to="/about">About</Link>
-          <Link to="/contact">Contact</Link>
+          <NavItem to="/" end icon={<HomeIcon />} label="Home" />
+          <NavItem to="/shop" icon={<ShopIcon />} label="Shop" />
+          <NavItem to="/about" icon={<AboutIcon />} label="About" />
+          <NavItem
+            to="/contact"
+            icon={<ContactIcon />}
+            label="Contact"
+          />
 
           {isAdmin && (
-            <>
-              <Link to="/admin/orders">Orders</Link>
-              <Link to="/admin/products">Products</Link>
+            <div className="nav-admin">
+              <NavItem
+                to="/admin/orders"
+                icon={<OrdersIcon />}
+                label="Orders"
+              />
+              <NavItem
+                to="/admin/products"
+                icon={<ProductsIcon />}
+                label="Products"
+              />
               <button
                 type="button"
-                className="nav-logout"
+                className="nav-item nav-logout"
                 onClick={handleLogout}
               >
-                Logout
+                <LogoutIcon />
+                <span className="nav-label">Logout</span>
               </button>
-            </>
+            </div>
           )}
         </div>
 
-        <Link to="/cart" className="cart-link">
-          Cart
+        <Link to="/cart" className="cart-link nav-item">
+          <CartIcon />
+          <span className="nav-label">Cart</span>
           <span className="cart-count">{cartCount}</span>
         </Link>
       </div>

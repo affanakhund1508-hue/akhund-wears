@@ -2,9 +2,31 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Hero from "../components/Hero";
 import ProductCard from "../components/ProductCard";
+import FadeSlideshow from "../components/FadeSlideshow";
+import { resolveImage } from "../utils/images";
+
+const DEFAULT_CULTURE_IMAGE = "/images/culture-banner.png";
 
 function Home({ onAddToCart }) {
   const [products, setProducts] = useState([]);
+
+  // null means "still checking which pictures to show"
+  const [culturePictures, setCulturePictures] = useState(null);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/settings`)
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data.cultureImages)
+          ? data.cultureImages.map(resolveImage).filter(Boolean)
+          : [];
+
+        setCulturePictures(
+          list.length > 0 ? list : [DEFAULT_CULTURE_IMAGE]
+        );
+      })
+      .catch(() => setCulturePictures([DEFAULT_CULTURE_IMAGE]));
+  }, []);
 
   useEffect(() => {
 fetch(`${import.meta.env.VITE_API_URL}/products`)      .then((res) => res.json())
@@ -20,10 +42,12 @@ fetch(`${import.meta.env.VITE_API_URL}/products`)      .then((res) => res.json()
 
       <section className="culture-banner">
         <div className="culture-image">
-          <img
-            src="/images/culture-banner.png"
-            alt="Pakistani cultural heritage"
-          />
+          {culturePictures && (
+            <FadeSlideshow
+              images={culturePictures}
+              alt="Pakistani cultural heritage"
+            />
+          )}
         </div>
 
         <div className="culture-content">
